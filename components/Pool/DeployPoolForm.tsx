@@ -4,18 +4,24 @@ import { useDeployContract, useWaitForTransactionReceipt } from 'wagmi';
 import { useRouter } from 'next/navigation';
 import { STAKINGPOOL_ABI, STAKINGPOOL_BYTECODE } from '@/lib/contracts/StakingPool';
 
+const ADDR_RE = /^0x[0-9a-fA-F]{40}$/;
+
 export default function DeployPoolForm() {
   const router = useRouter();
   const [stakeToken,  setStakeToken]  = useState('');
   const [rewardToken, setRewardToken] = useState('');
   const [days,        setDays]        = useState('7');
+  const [addrErr,     setAddrErr]     = useState('');
 
   const { deployContract, data: hash, isPending, error } = useDeployContract();
   const { data: receipt, isLoading } = useWaitForTransactionReceipt({ hash });
 
   function handleDeploy() {
     if (STAKINGPOOL_BYTECODE === '0x') { alert('Run: npm run compile'); return; }
-    if (!stakeToken || !rewardToken || !days) return;
+    if (!ADDR_RE.test(stakeToken))  { setAddrErr('Invalid staking token address'); return; }
+    if (!ADDR_RE.test(rewardToken)) { setAddrErr('Invalid reward token address'); return; }
+    if (!days || Number(days) <= 0) { setAddrErr('Duration must be > 0 days'); return; }
+    setAddrErr('');
     deployContract({
       abi: STAKINGPOOL_ABI,
       bytecode: STAKINGPOOL_BYTECODE,
@@ -44,6 +50,12 @@ export default function DeployPoolForm() {
         </div>
       </div>
 
+      {addrErr && (
+        <div style={{ background: '#1a0a0a', border: '1px solid #7f1d1d', borderRadius: 8, padding: '10px 14px', marginBottom: 14, color: '#f87171', fontSize: 13 }}>
+          {addrErr}
+        </div>
+      )}
+
       {error && (
         <div style={{ background: '#1a0a0a', border: '1px solid #7f1d1d', borderRadius: 8, padding: '10px 14px', marginBottom: 14, color: '#f87171', fontSize: 13 }}>
           {error.message.slice(0, 120)}
@@ -64,7 +76,7 @@ export default function DeployPoolForm() {
       ) : (
         <button
           onClick={handleDeploy}
-          disabled={isPending || isLoading || !stakeToken || !rewardToken || !days}
+          disabled={isPending || isLoading || !stakeToken || !rewardToken || !days || Number(days) <= 0}
           style={{
             width: '100%', padding: '13px 0',
             background: (isPending || isLoading) ? '#16163a' : 'linear-gradient(135deg, #8b5cf6, #a78bfa)',
