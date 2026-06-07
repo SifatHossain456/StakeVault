@@ -15,7 +15,7 @@ contract StakingPool {
     IERC20 public immutable rewardToken;
     address public immutable owner;
 
-    uint256 public rewardsDuration;   // seconds for each reward period
+    uint256 public immutable rewardsDuration;
     uint256 public periodFinish;      // timestamp when current period ends
     uint256 public rewardRate;        // reward tokens per second (whole pool)
     uint256 public lastUpdateTime;    // last checkpoint timestamp
