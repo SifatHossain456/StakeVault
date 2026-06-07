@@ -33,6 +33,8 @@ export default function PoolDashboard({ address }: Props) {
   const [withdrawAmt, setWithdrawAmt] = useState('');
   const [rewardAmt, setRewardAmt] = useState('');
   const [activeTab, setActiveTab] = useState<'stake' | 'withdraw' | 'reward'>('stake');
+  // Track which step the stake flow is on so we don't clear stakeAmt after approve
+  const [stakeStep, setStakeStep] = useState<'idle' | 'approving' | 'staking'>('idle');
 
   const { writeContract, data: txHash, isPending, error, reset } = useWriteContract();
   const { isSuccess: txDone, isLoading: txLoading } = useWaitForTransactionReceipt({ hash: txHash });
@@ -65,7 +67,10 @@ export default function PoolDashboard({ address }: Props) {
   useEffect(() => {
     if (txDone) {
       refetchPool(); refetchMyStaked(); refetchMyEarned(); refetchBal(); reset();
-      setStakeAmt(''); setWithdrawAmt(''); setRewardAmt('');
+      // Don't clear stakeAmt after approve — user still needs it to call stake
+      if (stakeStep !== 'approving') setStakeAmt('');
+      setWithdrawAmt(''); setRewardAmt('');
+      setStakeStep('idle');
     }
   }, [txDone]);
 
@@ -85,7 +90,7 @@ export default function PoolDashboard({ address }: Props) {
   function doStake() {
     if (!isConnected) { openConnectModal?.(); return; }
     if (!stakingTokenAddr || !stakeAmt) return;
-    // approve then stake in sequence — user does approve first
+    setStakeStep('approving');
     writeContract({
       address: stakingTokenAddr as `0x${string}`,
       abi: SIMPLETOKEN_ABI, functionName: 'approve',
@@ -94,6 +99,7 @@ export default function PoolDashboard({ address }: Props) {
   }
 
   function doStakeAfterApprove() {
+    setStakeStep('staking');
     writeContract({ address, abi: STAKINGPOOL_ABI, functionName: 'stake', args: [parseUnits(stakeAmt, 18)] });
   }
 
