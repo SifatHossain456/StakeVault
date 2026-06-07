@@ -240,7 +240,8 @@ export default function PoolDashboard({ address }: Props) {
                   Claim {fmt(myEarned as bigint | undefined)} {rwdSym}
                 </button>
               </div>
-              <button onClick={doExit} disabled={isPending || txLoading}
+              <button onClick={doExit}
+                disabled={isPending || txLoading || !myStaked || (myStaked as bigint) === 0n}
                 style={{ padding: '12px 0', background: '#1a0a0a', color: '#f87171', fontWeight: 700, borderRadius: 10, border: '1px solid #4a1e1e', fontSize: 13 }}>
                 Exit (Withdraw All + Claim)
               </button>
