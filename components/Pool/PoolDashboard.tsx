@@ -77,15 +77,20 @@ export default function PoolDashboard({ address }: Props) {
   const isOwner = userAddr && poolOwner && userAddr.toLowerCase() === (poolOwner as string).toLowerCase();
 
   // APR = (rewardRate * SECONDS_PER_YEAR / totalStaked) * 100
+  const now = BigInt(Math.floor(Date.now() / 1000));
   let apr = '—';
   if (rewardRate !== undefined && totalStaked !== undefined && totalStaked > 0n) {
-    const aprBps = rewardRate * SECONDS_PER_YEAR * 10000n / totalStaked;
-    apr = (Number(aprBps) / 100).toFixed(1) + '%';
+    if (periodFinish !== undefined && now >= periodFinish) {
+      apr = '0%';
+    } else {
+      const aprBps = rewardRate * SECONDS_PER_YEAR * 10000n / totalStaked;
+      apr = (Number(aprBps) / 100).toFixed(1) + '%';
+    }
   }
 
   const stkSym  = (stakeSymbol  as string | undefined) ?? 'STK';
   const rwdSym  = (rewardSymbol as string | undefined) ?? 'RWD';
-  const isActive = periodFinish !== undefined && BigInt(Math.floor(Date.now() / 1000)) < periodFinish;
+  const isActive = periodFinish !== undefined && now < periodFinish;
 
   function doStake() {
     if (!isConnected) { openConnectModal?.(); return; }
